@@ -10,5 +10,10 @@ Plugins:
 * Create a new, scaled layer from a specific layer
 * Adding watermark/copyright text
 
+Usage:
+* Pick one of the GIMP "plug-ins" directories (found in GIMP's "Preferences > Folders > Plug-Ins" list).
+* Copy the ".py" files to that directory.
+* Restart GIMP.
+* You should see the new menu items.
 
 License: http://eib.mit-license.org/
