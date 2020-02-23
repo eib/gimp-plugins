@@ -1,80 +1,82 @@
 #!/usr/bin/env python
 # -*- coding: <utf-8> -*-
 # Author: Ethan Blackwelder
-# Copyright 2013 Ethan Blackwelder
+# Copyright 2020 Ethan Blackwelder
 # License: MIT (http://eib.mit-license.org/)
 # Version 0.1
 # GIMP compatibilty ???
-# PyGIMP plugins to create scaled layers:
-#  - create a new layer from visible, scaled down to a maximum dimension
-#  - create a new layer from an existing layer, scaled down to a maximum dimension 
+# PyGIMP plugins to export layers:
+#  - export the active layer
+#  - export the selected layer
 
 
 from gimpfu import *
 import os
 
-def scale_down_layer(layer, max_dimension):
-    width = layer.width
-    height = layer.height
-    if height > 0 and width > max_dimension or height > max_dimension:
-        perspective = float(width) / height
-        new_width = min(width, max_dimension)
-        new_height = int(new_width * perspective)
-        if new_height > max_dimension and perspective > 0:
-            new_height = max_dimension
-            new_width = int(new_height / perspective)
-        pdb.gimp_layer_scale(layer, new_height, new_width, TRUE)
+_MAX_COMPRESSION = 9
+_DESKTOP_DIR = os.path.expanduser("~/Desktop")
 
-def create_scaled_layer_from_visible(img, max_dimension = 1200):
-    layer_name = "Visible @%d" % max_dimension
-    layer = pdb.gimp_layer_new_from_visible(img, img, layer_name)
-    img.add_layer(layer)
-    scale_down_layer(layer, max_dimension)
-    img.active_layer = layer
+def export_selected_layer(img, layer, dir, filename):
+    path = _sanitize_filepath(dir, filename)
+    _export_layer_as_png(img, layer, path)
 
-def duplicate_to_scaled_layer(img, old_layer, max_dimension = 1200):
-    layer_name = old_layer.name + " @%d" % max_dimension
-    layer = pdb.gimp_layer_new_from_drawable(old_layer, img)
-    pdb.gimp_item_set_name(layer, layer_name)
-    img.add_layer(layer)
-    scale_down_layer(layer, max_dimension)
-    img.active_layer = layer
+def export_active_layer(img, dir, filename):
+    path = _sanitize_filepath(dir, filename)
+    _export_layer_as_png(img, img.active_layer, path)
+
+
+def _export_layer_as_png(img, layer, path):
+    interlace = False
+    compression = _MAX_COMPRESSION
+    bkgd = True  # Write bKGD chunk?
+    gama = True  # Write gAMA chunk?
+    offs = True  # Write oFFs chunk?
+    phys = True  # Write pHYs chunk?
+    time = True  # Write tIME chunk?
+    pdb.file_png_save(img, layer, path, path, interlace, compression, bkgd, gama, offs, phys, time)    
+
+def _sanitize_filepath(dir, filename):
+    filename = filename if filename.lower().endswith(".png") else (filename + ".png")
+    return os.path.normpath(os.path.join(dir, filename))
+
 
 register(
-    proc_name=("python-fu-create-scaled-layer-from-visible"),
-    blurb=("Create Scaled Layer from Visible"),
-    help=("Creates a new layer (from visible) and scales down the layer to some maximum dimension."),
+    proc_name=("python-fu-export-active-layer"),
+    blurb=("Export Active Layer (PNG)"),
+    help=("Exports the active Layer as PNG."),
     author=("Ethan Blackwelder"),
     copyright=("Ethan Blackwelder"),
-    date=("2013"),
-    label=("Create Scaled Layer From Visible"),
+    date=("2020"),
+    label=("Export Active Layer (PNG)"),
     imagetypes=("*"),
     params=[
         (PF_IMAGE, "img", "Image", None),
-        (PF_INT, "max_dimension", "Max Dimension", 1200)
+        (PF_DIRNAME, "dir", "Directory", _DESKTOP_DIR),
+        (PF_FILE, "filename", "filename", None),
         ],
     results=[],
-    function=(create_scaled_layer_from_visible), 
-    menu=("<Image>/Layer"), 
+    function=(export_active_layer),
+    menu=("<Image>/Layer"),
     domain=("gimp20-python", gimp.locale_directory)
     )
 
 register(
-    proc_name=("python-fu-duplicate-to-scaled-layer"),
-    blurb=("Duplicate to Scaled Layer"),
-    help=("Duplicates the current layer and scales down the layer to some maximum dimension."),
+    proc_name=("python-fu-export-selected-layer"),
+    blurb=("Export Selected Layer (PNG)"),
+    help=("Exports the selected layer as PNG."),
     author=("Ethan Blackwelder"),
     copyright=("Ethan Blackwelder"),
     date=("2013"),
-    label=("Duplicate to Scaled Layer"),
+    label=("Export Selected Layer (PNG)"),
     imagetypes=("*"),
     params=[
         (PF_IMAGE, "img", "Image", None),
-         (PF_LAYER, "old_layer", "Ignored", None),
-        (PF_INT, "max_dimension", "Max Dimension", 1200)
+        (PF_LAYER, "layer", "Ignored", None),
+        (PF_DIRNAME, "dir", "Directory", _DESKTOP_DIR),
+        (PF_FILE, "filename", "filename", None),
         ],
     results=[],
-    function=(duplicate_to_scaled_layer), 
+    function=(export_selected_layer), 
     menu=("<Layers>"), 
     domain=("gimp20-python", gimp.locale_directory)
     )

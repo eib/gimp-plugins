@@ -70,7 +70,7 @@ register(
     imagetypes=("*"),
     params=[
         (PF_IMAGE, "img", "Image", None),
-         (PF_LAYER, "old_layer", "Ignored", None),
+        (PF_LAYER, "old_layer", "Ignored", None),
         (PF_INT, "max_dimension", "Max Dimension", 1200)
         ],
     results=[],
